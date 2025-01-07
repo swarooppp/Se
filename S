@@ -1,0 +1,1 @@
+Before proceeding with deletion, we are exporting Cloud SQL data to Cloud Storage, downloading the data, and collecting logs from Kubernetes pods.
