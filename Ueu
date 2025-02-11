@@ -1,0 +1,31 @@
+pipeline {
+    agent {
+        label 'uwue-linux' // Use the agent labeled 'uwue-linux'
+    }
+    triggers {
+        GenericTrigger(
+            genericVariables: [
+                [key: 'ref', value: '$.pull_request.base.ref'],
+                [key: 'action', value: '$.action']
+            ],
+            causeString: 'Triggered by GitHub PR',
+            token: 'YOUR_TOKEN', // Optional
+            printContributedVariables: true,
+            printPostContent: true
+        )
+    }
+    stages {
+        stage('Check PR') {
+            steps {
+                script {
+                    if (env.ref == 'main' && env.action == 'opened') {
+                        echo "PR opened against main branch. Triggering pipeline..."
+                        // Add your build/test/deploy steps here
+                    } else {
+                        echo "Skipping pipeline for non-main branch or non-PR event."
+                    }
+                }
+            }
+        }
+    }
+}
