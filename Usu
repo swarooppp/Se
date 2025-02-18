@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    triggers {
+        genericTrigger(
+            genericVariables: [
+                [key: 'pr_action', value: '$.action'],
+                [key: 'pr_number', value: '$.pull_request.number'],
+                [key: 'pr_user', value: '$.pull_request.user.login'],
+                [key: 'pr_title', value: '$.pull_request.title'],
+                [key: 'pr_source_branch', value: '$.pull_request.head.ref'],
+                [key: 'pr_target_branch', value: '$.pull_request.base.ref']
+            ],
+            token: 'your_defined_token',
+            printPostContent: true
+        )
+    }
+
+    stages {
+        stage('Process Pull Request') {
+            steps {
+                script {
+                    echo "Pull Request #${params.pr_number} by ${params.pr_user}"
+                    echo "Title: ${params.pr_title}"
+                    echo "Source Branch: ${params.pr_source_branch}"
+                    echo "Target Branch: ${params.pr_target_branch}"
+                    echo "Action: ${params.pr_action}"
+
+                    if (params.pr_action == 'opened' || params.pr_action == 'synchronize') {
+                        echo "Processing the pull request..."
+                        // Add your build or validation steps here
+                    } else {
+                        echo "No action required for this pull request event."
+                    }
+                }
+            }
+        }
+    }
+}
