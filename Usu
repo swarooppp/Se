@@ -5,14 +5,14 @@ pipeline {
         genericTrigger(
             genericVariables: [
                 [key: 'pr_action', value: '$.action'],
-                [key: 'pr_number', value: '$.pull_request.number'],
-                [key: 'pr_user', value: '$.pull_request.user.login'],
-                [key: 'pr_title', value: '$.pull_request.title'],
-                [key: 'pr_source_branch', value: '$.pull_request.head.ref'],
                 [key: 'pr_target_branch', value: '$.pull_request.base.ref']
             ],
+            causeString: 'Triggered on $pr_action to $pr_target_branch',
             token: 'your_defined_token',
-            printPostContent: true
+            printContributedVariables: true,
+            printPostContent: true,
+            regexpFilterText: '$pr_action $pr_target_branch',
+            regexpFilterExpression: '^opened|synchronize\s+main$'
         )
     }
 
@@ -20,13 +20,10 @@ pipeline {
         stage('Process Pull Request') {
             steps {
                 script {
-                    echo "Pull Request #${params.pr_number} by ${params.pr_user}"
-                    echo "Title: ${params.pr_title}"
-                    echo "Source Branch: ${params.pr_source_branch}"
-                    echo "Target Branch: ${params.pr_target_branch}"
                     echo "Action: ${params.pr_action}"
+                    echo "Target Branch: ${params.pr_target_branch}"
 
-                    if (params.pr_action == 'opened' || params.pr_action == 'synchronize') {
+                    if (params.pr_action in ['opened', 'synchronize'] && params.pr_target_branch == 'main') {
                         echo "Processing the pull request..."
                         // Add your build or validation steps here
                     } else {
