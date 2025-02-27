@@ -1,0 +1,59 @@
+pipeline {
+    agent { label 'hshdh' }  
+    environment {
+        CREDENTIAL_ID = 'my-unknown-file'  // Replace with your actual Jenkins credential ID
+    }
+    stages {
+        stage('Retrieve and Identify File') {
+            steps {
+                script {
+                    withCredentials([file(credentialsId: CREDENTIAL_ID, variable: 'SECRET_FILE')]) {
+                        def workspace = env.WORKSPACE
+                        def savedFilePath = "${workspace}/retrieved_file"
+
+                        // Copy file from credentials
+                        sh "cp ${SECRET_FILE} ${savedFilePath}"
+
+                        // Identify file type
+                        def fileType = sh(script: "file ${savedFilePath}", returnStdout: true).trim()
+                        def fileHead = sh(script: "head -n 5 ${savedFilePath}", returnStdout: true).trim()
+
+                        // Print debug information
+                        echo "File Type: ${fileType}"
+                        echo "File Content (First 5 lines):\n${fileHead}"
+
+                        // Rename file based on content
+                        if (fileHead.contains("BEGIN CERTIFICATE")) {
+                            sh "mv ${savedFilePath} ${workspace}/certificate.pem"
+                            savedFilePath = "${workspace}/certificate.pem"
+                        } else if (fileHead.contains("PRIVATE KEY")) {
+                            sh "mv ${savedFilePath} ${workspace}/private_key.key"
+                            savedFilePath = "${workspace}/private_key.key"
+                        } else {
+                            echo "Unknown file type. Keeping original name."
+                        }
+                    }
+                }
+            }
+        }
+        stage('Send Email with Detected File') {
+            steps {
+                script {
+                    def savedFilePath = "${env.WORKSPACE}/retrieved_file"  // Adjusted based on detection
+
+                    if (fileExists(savedFilePath)) {
+                        emailext(
+                            subject: "Jenkins - Retrieved Credential File",
+                            body: "Attached is the credential file retrieved from Jenkins.",
+                            to: 'recipient@example.com',
+                            attachFiles: savedFilePath
+                        )
+                        echo "Email sent with attachment: ${savedFilePath}"
+                    } else {
+                        echo "ERROR: File not found, skipping email."
+                    }
+                }
+            }
+        }
+    }
+}
